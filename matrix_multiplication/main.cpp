@@ -13,7 +13,7 @@ void matrix_multiplication(int exp, int rep) {
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> dis(0, 10);
 
-    //for (int i = 0; i < rep; i++) {
+    for (int i = 0; i < rep; i++) {
         T matrix_1 [size][size];
         T matrix_2 [size][size];
         T result [size][size];
@@ -41,49 +41,56 @@ void matrix_multiplication(int exp, int rep) {
         end = std::chrono::high_resolution_clock::now();
         double executionTime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
         executionTimes.push_back(executionTime);
-
-
         
-    //}
-
-
-
-    for (int i = 0; i < size; i++) {
-        for (int j = 0; j < size; j++) {
-            std::cout << matrix_1[i][j] << " ";
-        }
-        std::cout << std::endl;
     }
 
-    std::cout << "------------" << std::endl;
 
-    for (int i = 0; i < size; i++) {
-        for (int j = 0; j < size; j++) {
-            std::cout << matrix_2[i][j] << " ";
-        }
-        std::cout << std::endl;
-    }
 
-    std::cout << "------------" << std::endl;
+    // for (int i = 0; i < size; i++) {
+    //     for (int j = 0; j < size; j++) {
+    //         std::cout << matrix_1[i][j] << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
 
-    for (int i = 0; i < size; i++) {
-        for (int j = 0; j < size; j++) {
-            std::cout << result[i][j] << " ";
-        }
-        std::cout << std::endl;
-    }
+    // std::cout << "------------" << std::endl;
+
+    // for (int i = 0; i < size; i++) {
+    //     for (int j = 0; j < size; j++) {
+    //         std::cout << matrix_2[i][j] << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+
+    // std::cout << "------------" << std::endl;
+
+    // for (int i = 0; i < size; i++) {
+    //     for (int j = 0; j < size; j++) {
+    //         std::cout << result[i][j] << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
     
-    std::cout << "------------" << std::endl;
+    // std::cout << "------------" << std::endl;
 
-    //double mean = std::accumulate(executionTimes.begin(), executionTimes.end(), 0.0) / rep;
     //std::cout << mean << std::endl;
-    double time_in_sec = executionTimes[0] * pow(10, -9);
-    double flops = operations / time_in_sec;
-    double MFlops = flops * pow(10, -6);
+
+    std::vector<double> executionFlops;
+    // for each time we calculate the corresponding flops metric and we store it as MFlops
+    for (auto time : executionTimes) {
+        double const time_in_sec = time * pow(10, -9);
+        double const flops = operations / time_in_sec;
+        double const flops_in_mflops = flops * pow(10, -6);
+        executionFlops.push_back(flops_in_mflops);
+    }
+    // Mean of flops
+    double mean_mflops = std::accumulate(executionFlops.begin(), executionFlops.end(), 0.0) / rep;
+    double peak_mflops = *std::max_element(executionFlops.begin(), executionFlops.end());
+
+
     std::cout << "Number of operations: " << operations << std::endl;
-    std::cout << "Execution Time: " << time_in_sec << "s" << std::endl;
-    std::cout << std::fixed << "FLOPS: " << flops << std::endl;
-    std::cout << std::fixed << "MFLOPS: " << MFlops << std::endl;
+    std::cout << std::fixed << "Mean MFLOPS: " << mean_mflops << std::endl;
+    std::cout << std::fixed << "Peak MFLOPS: " << peak_mflops << std::endl;
 
 }
 
@@ -91,7 +98,7 @@ int main(int argc, char const *argv[]) {
     
     if (argc == 2) {
         int exponent = std::stoi(argv[1]);
-        matrix_multiplication<int>(exponent, 20);
+        matrix_multiplication<int>(exponent, 10);
     } else {
         std::cout << "1 argument expected: exponent!" << std::endl;
     }

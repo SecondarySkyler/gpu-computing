@@ -45,6 +45,22 @@ which takes advantage of a block mechanism to reduce the number of cache misses.
     \end{algorithmic}
 \end{algorithm}
 
+\begin{algorithm}
+    \caption{Matrix Transposition with Blocking}
+    \begin{algorithmic}[1]
+        \State $src \gets create\_matrix(size)$
+        \For{$i = 0$ to $size$ increase $i$ by $block\_size$}
+            \For{$j = 0$ to $size$ increase $j$ by $block\_size$}
+                \For{$k = i$ to $i$ + $block\_size$} \Comment{Loop over the current block}
+                    \For{$l = j$ to $j$ + $block\_size$}
+                        \State $dest[l * size + k] = src[k * size + l]$
+                    \EndFor
+                \EndFor
+            \EndFor
+        \EndFor
+    \end{algorithmic}
+\end{algorithm}
+
 \section{Bo da decidere}
 \subsection{Hardware}
 \begin{enumerate}

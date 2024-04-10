@@ -3,6 +3,8 @@
 #include <chrono>
 #include <iomanip>
 #include <fstream>
+#include <map>
+#define O_FLAG "-O3"
 
 void transpose(int* src, int* dest, const int size, std::vector<long double>& times) {
 
@@ -39,7 +41,7 @@ void transponse_block(int* src, int* dest, const int size, std::vector<long doub
     end = std::chrono::high_resolution_clock::now();
     double executionTime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     executionTime /= 1e9;
-    std::cout << "print time in transpose function: " << executionTime << " ns" << std::endl;
+    // std::cout << "print time in transpose function: " << executionTime << " ns" << std::endl;
     times.push_back(executionTime);
 }
 
@@ -63,14 +65,15 @@ void print_matrix(int* matrix, const int size) {
 }
 
 void calculate_effective_bandwidth(const std::vector<long double>& times, const int dimension) {
-    const double total_data = (2 * dimension * dimension * sizeof(int)) / 1e9;
+    const double total_data = (2 * dimension * dimension * sizeof(int)) / 10e9;
     std::cout << "Total data: " << total_data << " GB" << std::endl;
     std::vector<double> bandWidths;
 
     for (auto time : times) {
         std::cout << "Time: " << time << " ns" << std::endl;
-        double bandwidth = total_data / time;
-        bandwidth /= 1e9;
+        double time_sec = time / 10e9;
+        double bandwidth = total_data / time_sec;
+        //bandwidth *= 1e9;
         bandWidths.push_back(bandwidth);
     }
 
@@ -82,48 +85,83 @@ void calculate_effective_bandwidth(const std::vector<long double>& times, const 
 }
 
 int main(int argc, char const *argv[]) {
-    // take integer from argv[1]
-    // int dimension = pow(2, std::stoi(argv[1]));
-    // std::array exponents = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
-    std::array exponents = {11};
+    int dimension = 1024;
     const int repeat = 100;
-    const int blockSize = 16;
-    // const std::string O_FLAG = "-O3";
+    const int blockSize = 32;
     std::vector<long double> times;
 
-    for (const int exp : exponents) {
-        std::cout << "Dimension: " << exp << std::endl;
-        int dimension = pow(2, exp);
 
-        for (int i = 0; i < repeat; i++) {
-            std::cout << "Iteration: " << i << std::endl;
-            // create matrix
-            int* matrix = create_matrix(dimension);
-            int* transposed_matrix = new int[dimension * dimension];
-            // transpose(matrix, transposed_matrix, dimension, times);
-            transponse_block(matrix, transposed_matrix, dimension, times, blockSize);
+    for (int i = 0; i < repeat; i++) {
+        int* matrix = create_matrix(dimension);
+        int* transposed_matrix = new int[dimension * dimension];
+        transponse_block(matrix, transposed_matrix, dimension, times, blockSize);
+
+        delete [] matrix;
+        delete [] transposed_matrix;
+    }
+
+    // calculate_effective_bandwidth(times, dimension);
+    double mean_time = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
+    double total_data = (2 * dimension * dimension * sizeof(int));
+
+    double bandwidth = total_data / mean_time;
+    bandwidth /= 1e9;
+    std::cout << "Bandwidth: " << bandwidth << " GB/s" << std::endl;
+    
+    // std::ofstream file("m1_block.csv", std::ios::app);
+    // file << O_FLAG << "," << dimension << "," << bandwidth << std::endl;
+
+
+    times.clear();
+    
+    return 0;
+
+}
+
+
+// int main(int argc, char const *argv[]) {
+//     // take integer from argv[1]
+//     // int dimension = pow(2, std::stoi(argv[1]));
+//     // std::array exponents = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+//     std::array exponents = {11};
+//     const int repeat = 100;
+//     const int blockSize = 16;
+//     // const std::string O_FLAG = "-O3";
+//     std::vector<long double> times;
+
+//     for (const int exp : exponents) {
+//         std::cout << "Dimension: " << exp << std::endl;
+//         int dimension = pow(2, exp);
+
+//         for (int i = 0; i < repeat; i++) {
+//             std::cout << "Iteration: " << i << std::endl;
+//             // create matrix
+//             int* matrix = create_matrix(dimension);
+//             int* transposed_matrix = new int[dimension * dimension];
+//             // transpose(matrix, transposed_matrix, dimension, times);
+//             transponse_block(matrix, transposed_matrix, dimension, times, blockSize);
             
-            // print_matrix(matrix, dimension);
-            // std::cout << "------------" << std::endl;
-            // print_matrix(transposed_matrix, dimension);
-            // std::cout << "------------" << std::endl;
+//             // print_matrix(matrix, dimension);
+//             // std::cout << "------------" << std::endl;
+//             // print_matrix(transposed_matrix, dimension);
+//             // std::cout << "------------" << std::endl;
 
-            delete [] matrix;
-            delete [] transposed_matrix;
-        }
+//             delete [] matrix;
+//             delete [] transposed_matrix;
+//         }
 
-        // calculate effective bandwidth
-        calculate_effective_bandwidth(times, dimension);
+//         // calculate effective bandwidth
+//         calculate_effective_bandwidth(times, dimension);
         
 
-        // Write to file
-        // std::ofstream file("output.csv", std::ios::app);
-        // file << O_FLAG << "," << dimension << "," << meanBandwidth << "," << peakBandwidth << std::endl;
-        // bandWidths.clear();
-        times.clear();
-    }
+//         // Write to file
+//         // std::ofstream file("output.csv", std::ios::app);
+//         // file << O_FLAG << "," << dimension << "," << meanBandwidth << "," << peakBandwidth << std::endl;
+//         // bandWidths.clear();
+//         times.clear();
+//     }
     
 
 
-    return 0;
-}
+//     return 0;
+// }

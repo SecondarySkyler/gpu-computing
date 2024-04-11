@@ -2,6 +2,7 @@
 \usepackage{graphicx}
 \usepackage{hyperref}
 \usepackage{algorithm}
+\usepackage{amsmath}
 \usepackage{algpseudocode}
 \usepackage[
     top=0.5in,
@@ -9,6 +10,8 @@
     left=0.75in,
     right=0.75in
 ]{geometry}
+\usepackage{color, colortbl}
+\definecolor{LightYellow}{rgb}{1, 0.9, 0.78}
 
 \title{\textbf{GPU Computing} \\
     \large Homework 1: Matrix Transposition \\
@@ -23,13 +26,13 @@
 \section{Problem Description}
 The goal of this homework is to implement a matrix transposition algorithm, where the transpose of a matrix
 is an operator which flips the matrix over its diagonal. That is, if $A$ is a matrix of size $m \times n$, then
-the transpose of $A$ is a matrix of size $n \times m$ where the element at row $i$ and column $j$ is the element,
-also denoted as $A\textsuperscript{T}$. \\
+the transpose of $A$ is a matrix of size $n \times m$ where the element at row $i$ and column $j$ of $A$, is the element at 
+row $j$ and column $i$ of the transpose of $A$, also denoted as $A\textsuperscript{T}$. \\
 Additionally, we are asked to measure the effective bandwidth of our implementation, considering also the
 usage of different optimization flags such as: \texttt{-O0}, \texttt{-O1}, \texttt{-O2}, \texttt{-O3}. \\
 Furthermore an analysis of the cache behavior of the algorithm is required, for this purpose we are going to use
 valgrind.
-\subsection{Algorithm}
+\subsection{Algorithms}
 In order to dimostrare qualcosa, two algorithms have been implemented: the first one is a na\"{i}ve approach, which
 consists in iterating over the matrix and swapping the elements, while the second one is a more optimized version
 which takes advantage of a block mechanism to reduce the number of cache misses.
@@ -61,7 +64,7 @@ which takes advantage of a block mechanism to reduce the number of cache misses.
     \end{algorithmic}
 \end{algorithm}
 
-\section{Bo da decidere}
+\section{Experimental Setup}
 \subsection{Hardware}
 \begin{enumerate}
     \item \textbf{Desktop PC}
@@ -93,13 +96,113 @@ which takes advantage of a block mechanism to reduce the number of cache misses.
         \item \textbf{RAM}: 8 GB LPDDR4X
         \item \textbf{OS}: macOS Ventura 13.2.1
     \end{itemize}
+    \item \textbf{Marzola Cluster}
+    \begin{itemize}
+        \item \textbf{CPU}: Intel Xeon Silver 4309y
+        \begin{itemize}
+            \item \textbf{Cores}: 4
+            \item \textbf{Threads}: 8
+            \item \textbf{Base Clock}: 2.80 GHz
+            \item \textbf{L1 Cache}: 32 KB (per core)
+            \item \textbf{L2 Cache}: 1 MB (per core)
+            \item \textbf{L3 Cache}: 12 MB
+        \end{itemize}
+    \end{itemize}
 \end{enumerate}
 \subsection{Results}
+To provide a broader and precise analysis, the results have been collected executing both algorithms on matrices of different sizes,
+ranging from $4 \times 4$ to $4096 \times 4096$. Also, for each dimension, the algorithms have been executed multiple times (100) to further improve the measurements. \\
+The effective bandwidth has been calculated using the formula: \\
+\begin{equation*}
+    Effective \: Bandwidth = \frac{\left ( 2 * dimension * dimension * 4 \right )}{execution\: time}
+    \left[\frac{GB}{s}\right]
+\end{equation*}
+where the factor $2$ is due to the fact that we are reading and writing the matrix, the $dimension$ is the size of the matrix, 
+$4$ is the size of a single element (float) and the $execution \: time$ is the average of the 100 executions. \\
+\subsubsection{Na\"{i}ve Algorithm}
+The obtained results are in line with the expectations, indeed the executions with \texttt{-O0} don't show any significant difference because the compiler 
+doesn't apply any optimization. Meanwhile, the executions with \texttt{-O1}, \texttt{-O2} and \texttt{-O3} show a significant improvement in the performance, on all
+the tested platforms. This is probably due to the fact that the compiler is able to apply some optimizations, such as loop unrolling. \\
+Another interesting aspect is that both the Ryzen 5 and the Xeon starts to show a decrease in the performance when the matrix size is greater than $64 \times 64$, while
+the M1 reaches the peak performance with a matrix of size $128 \times 128$ and then starts to decrease (figure \ref{fig:naive_comparison}). \\
+To try to understand this behavior, the cache miss rate has been analyzed using valgrind. Unfortunately, the tool it isn't available
+for the MacBook, so the analysis has been performed only on the Ryzen 5 and the Xeon. \\ 
+\begin{table}[]
+    \centering
+    \begin{tabular}{|c|c|c|}
+    \hline
+    \multicolumn{3}{|c|}{\textbf{Ryzen 5 5600X}} \\
+    \hline
+    Dimension            & I1 miss rate & D1 miss rate \\ \hline
+    64                   & 0.01\%       & 0.4\%        \\ \hline
+    128                  & 0.00\%       & 4.0\%        \\ \hline 
+    \end{tabular}
+    \hspace{2em}
+    \begin{tabular}{|c|c|c|}
+        \hline
+        \multicolumn{3}{|c|}{\textbf{Xeon 4309y}} \\
+        \hline
+        Dimension            & I1 miss rate & D1 miss rate \\ \hline
+        64                   & 0.01\%       & 0.1\%        \\ \hline
+        128                  & 0.00\%       & 3.6\%        \\ \hline 
+        \end{tabular}
+\end{table}
 \begin{figure}[H]
     \centering
-    \includegraphics[scale=0.8]{report/img/naive_comparison.png}
+    \includegraphics[scale=0.7]{report/img/naive_comparison_2.png}
     \caption{Comparison of the na\"{i}ve matrix transposition algorithm}
+    \label{fig:naive_comparison}
 \end{figure}
+\subsubsection{Blocked Algorithm}
+The idea behind the blocked algorithm is to reduce the number of cache misses by exploiting the locality of the data. But in order to benefit from this, the block
+size must be chosen with care, furthermore the block size depends also on the size of the cache line. To decide the best size, the algorithm has been firstly
+tested with different block sizes. The results for the different platforms are in the table \ref{tab:blocked_results}, where the highlighted rows indicate the 
+block size which fits the best for the given processor.
+\begin{table}
+    \centering
+    \begin{tabular}{|c|c|}
+        \hline
+        \multicolumn{2}{|c|}{\textbf{Apple M1}} \\
+        \hline
+        Blocksize & Bandwidth \\ \hline
+        2         & 4.8506 GB/s \\ \hline
+        4         & 7.49072 GB/s \\ \hline
+        8         & 3.47782 GB/s \\ \hline
+        16        & 3.62071 GB/s \\ \hline
+        32        & 3.33045 GB/s \\ \hline
+        64        & 2.7568 GB/s \\ \hline
+    \end{tabular}
+    \hspace{2em}
+    \begin{tabular}{|c|c|}
+        \hline
+        \multicolumn{2}{|c|}{\textbf{Ryzen 5 5600X}} \\
+        \hline
+        Blocksize & Bandwidth \\ \hline
+        2         & 4.8506 GB/s \\ \hline
+        \rowcolor{LightYellow}
+        4         & 7.49072 GB/s \\ \hline
+        8         & 3.47782 GB/s \\ \hline
+        16        & 3.62071 GB/s \\ \hline
+        32        & 3.33045 GB/s \\ \hline
+        64        & 2.7568 GB/s \\ \hline
+    \end{tabular}
+    \hspace{2em}
+    \begin{tabular}{|c|c|}
+        \hline
+        \multicolumn{2}{|c|}{\textbf{Xeon 4309y}} \\
+        \hline
+        Blocksize & Bandwidth \\ \hline
+        2         & 2.04391 GB/s \\ \hline
+        4         & 3.83168 GB/s \\ \hline
+        \rowcolor{LightYellow}
+        8         & 4.80583 GB/s \\ \hline
+        16        & 2.45955 GB/s \\ \hline
+        32        & 2.59337 GB/s \\ \hline
+        64        & 2.72063 GB/s \\ \hline
+    \end{tabular}
+    \caption{Results of the blocked algorithm with different block sizes ($1024 \times 1024$, \texttt{-O3})}
+    \label{tab:blocked_results}
+\end{table}
 \section{Conclusion}
 \end{document}
 

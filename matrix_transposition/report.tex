@@ -81,21 +81,6 @@ which takes advantage of a block mechanism to reduce the number of cache misses.
         \item \textbf{RAM}: 16 GB DDR4
         \item \textbf{OS}: Ubuntu 22.04 (on WSL2)
     \end{itemize}
-    \item \textbf{MacBook Air M1}
-    \begin{itemize}
-        \item \textbf{CPU}: Apple M1
-        \begin{itemize}
-            \item \textbf{Cores}: 8 (4 Firestorm + 4 Icestorm)
-            \item \textbf{Threads}: 8
-            \item \textbf{Base Clock}: 3.2 GHz
-            \item \textbf{L1 Cache Firestorm}: 192 + 128 KB (instructions + data, per core)
-            \item \textbf{L2 Cache Firestorm}: 12 MB (shared)
-            \item \textbf{L1 Cache Icestorm}: 128 + 64 KB (instructions + data, per core)
-            \item \textbf{L2 Cache Icestorm}: 4 MB (shared)
-        \end{itemize}
-        \item \textbf{RAM}: 8 GB LPDDR4X
-        \item \textbf{OS}: macOS Ventura 13.2.1
-    \end{itemize}
     \item \textbf{Marzola Cluster}
     \begin{itemize}
         \item \textbf{CPU}: Intel Xeon Silver 4309y
@@ -123,10 +108,9 @@ $4$ is the size of a single element (float) and the $execution \: time$ is the a
 The obtained results are in line with the expectations, indeed the executions with \texttt{-O0} don't show any significant difference because the compiler 
 doesn't apply any optimization. Meanwhile, the executions with \texttt{-O1}, \texttt{-O2} and \texttt{-O3} show a significant improvement in the performance, on all
 the tested platforms. This is probably due to the fact that the compiler is able to apply some optimizations, such as loop unrolling. \\
-Another interesting aspect is that both the Ryzen 5 and the Xeon starts to show a decrease in the performance when the matrix size is greater than $64 \times 64$, while
-the M1 reaches the peak performance with a matrix of size $128 \times 128$ and then starts to decrease (figure \ref{fig:naive_comparison}). \\
-To try to understand this behavior, the cache miss rate has been analyzed using valgrind. Unfortunately, the tool it isn't available
-for the MacBook, so the analysis has been performed only on the Ryzen 5 and the Xeon. \\ 
+Another interesting aspect is that both the Ryzen 5 and the Xeon starts to show a decrease in the performance when the matrix size is greater than $64 \times 64$, 
+as shown in figure \ref{fig:naive_comparison}. \\
+To try to understand this behavior, the cache miss rate has been analyzed using valgrind (table \ref{tab:naive_cache_miss}). \\ 
 \begin{table}[]
     \centering
     \begin{tabular}{|c|c|c|}
@@ -145,34 +129,23 @@ for the MacBook, so the analysis has been performed only on the Ryzen 5 and the 
         Dimension            & I1 miss rate & D1 miss rate \\ \hline
         64                   & 0.01\%       & 0.1\%        \\ \hline
         128                  & 0.00\%       & 3.6\%        \\ \hline 
-        \end{tabular}
+    \end{tabular}
+    \caption{Cache miss rate of the na\"{i}ve algorithm}
+    \label{tab:naive_cache_miss}
 \end{table}
 \begin{figure}[H]
     \centering
-    \includegraphics[scale=0.7]{report/img/naive_comparison_2.png}
+    \includegraphics[scale=0.8]{report/img/naive_comparison.png}
     \caption{Comparison of the na\"{i}ve matrix transposition algorithm}
     \label{fig:naive_comparison}
 \end{figure}
 \subsubsection{Blocked Algorithm}
 The idea behind the blocked algorithm is to reduce the number of cache misses by exploiting the locality of the data. But in order to benefit from this, the block
 size must be chosen with care, furthermore the block size depends also on the size of the cache line. To decide the best size, the algorithm has been firstly
-tested with different block sizes. The results for the different platforms are in the table \ref{tab:blocked_results}, where the highlighted rows indicate the 
+tested with different block sizes. The results for the different platforms are shown in table \ref{tab:blocked_results}, where the highlighted rows indicate the 
 block size which fits the best for the given processor.
 \begin{table}
     \centering
-    \begin{tabular}{|c|c|}
-        \hline
-        \multicolumn{2}{|c|}{\textbf{Apple M1}} \\
-        \hline
-        Blocksize & Bandwidth \\ \hline
-        2         & 4.8506 GB/s \\ \hline
-        4         & 7.49072 GB/s \\ \hline
-        8         & 3.47782 GB/s \\ \hline
-        16        & 3.62071 GB/s \\ \hline
-        32        & 3.33045 GB/s \\ \hline
-        64        & 2.7568 GB/s \\ \hline
-    \end{tabular}
-    \hspace{2em}
     \begin{tabular}{|c|c|}
         \hline
         \multicolumn{2}{|c|}{\textbf{Ryzen 5 5600X}} \\
@@ -203,6 +176,12 @@ block size which fits the best for the given processor.
     \caption{Results of the blocked algorithm with different block sizes ($1024 \times 1024$, \texttt{-O3})}
     \label{tab:blocked_results}
 \end{table}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{report/img/block_vs_naive.png}
+    \caption{Comparison of the blocked algorithm against the na\"{i}ve algorithm}
+    \label{fig:blocked_comparison}
+\end{figure}
 \section{Conclusion}
 \end{document}
 

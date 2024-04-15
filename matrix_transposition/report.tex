@@ -11,6 +11,7 @@
     right=0.75in
 ]{geometry}
 \usepackage{color, colortbl}
+\usepackage{multicol}
 \definecolor{LightYellow}{rgb}{1, 0.9, 0.78}
 
 \title{\textbf{GPU Computing} \\
@@ -66,34 +67,42 @@ which takes advantage of a block mechanism to reduce the number of cache misses.
 
 \section{Experimental Setup}
 \subsection{Hardware}
-\begin{enumerate}
-    \item \textbf{Desktop PC}
-    \begin{itemize}
-        \item \textbf{CPU}: AMD Ryzen 5 5600X
-        \begin{itemize}
-            \item \textbf{Cores}: 6
-            \item \textbf{Threads}: 12
-            \item \textbf{Base Clock}: 3.7 GHz
-            \item \textbf{L1 Cache}: 64 KB (per core)
-            \item \textbf{L2 Cache}: 512 KB (per core)
-            \item \textbf{L3 Cache}: 32 MB
-        \end{itemize}
-        \item \textbf{RAM}: 16 GB DDR4
-        \item \textbf{OS}: Ubuntu 22.04 (on WSL2)
-    \end{itemize}
-    \item \textbf{Marzola Cluster}
-    \begin{itemize}
-        \item \textbf{CPU}: Intel Xeon Silver 4309y
-        \begin{itemize}
-            \item \textbf{Cores}: 4
-            \item \textbf{Threads}: 8
-            \item \textbf{Base Clock}: 2.80 GHz
-            \item \textbf{L1 Cache}: 32 KB (per core)
-            \item \textbf{L2 Cache}: 1 MB (per core)
-            \item \textbf{L3 Cache}: 12 MB
-        \end{itemize}
-    \end{itemize}
-\end{enumerate}
+\begin{minipage}{\textwidth}
+    \begin{multicols}{2}
+        \raggedcolumns
+        \begin{enumerate}
+            \item \textbf{Desktop PC}
+            \begin{itemize}
+                \item \textbf{CPU}: AMD Ryzen 5 5600X
+                \begin{itemize}
+                    \item \textbf{Cores}: 6
+                    \item \textbf{Threads}: 12
+                    \item \textbf{Base Clock}: 3.7 GHz
+                    \item \textbf{L1 Cache}: 64 KB (per core)
+                    \item \textbf{L2 Cache}: 512 KB (per core)
+                    \item \textbf{L3 Cache}: 32 MB
+                \end{itemize}
+                \item \textbf{RAM}: 16 GB DDR4
+                \item \textbf{OS}: Ubuntu 22.04 (on WSL2)
+            \end{itemize}
+            \columnbreak
+            \item \textbf{Marzola Cluster}
+            \begin{itemize}
+                \item \textbf{CPU}: Intel Xeon Silver 4309y
+                \begin{itemize}
+                    \item \textbf{Cores}: 4
+                    \item \textbf{Threads}: 8
+                    \item \textbf{Base Clock}: 2.80 GHz
+                    \item \textbf{L1 Cache}: 32 KB (per core)
+                    \item \textbf{L2 Cache}: 1 MB (per core)
+                    \item \textbf{L3 Cache}: 12 MB
+                    \item[\vspace{\fill}]
+                    \item[\vspace{\fill}]
+                \end{itemize}
+            \end{itemize}
+        \end{enumerate}
+    \end{multicols}
+\end{minipage}
 \subsection{Results}
 To provide a broader and precise analysis, the results have been collected executing both algorithms on matrices of different sizes,
 ranging from $4 \times 4$ to $4096 \times 4096$. Also, for each dimension, the algorithms have been executed multiple times (100) to further improve the measurements. \\
@@ -111,7 +120,7 @@ the tested platforms. This is probably due to the fact that the compiler is able
 Another interesting aspect is that both the Ryzen 5 and the Xeon starts to show a decrease in the performance when the matrix size is greater than $64 \times 64$, 
 as shown in figure \ref{fig:naive_comparison}. \\
 To try to understand this behavior, the cache miss rate has been analyzed using valgrind (table \ref{tab:naive_cache_miss}). \\ 
-\begin{table}[]
+\begin{table}[h]
     \centering
     \begin{tabular}{|c|c|c|}
     \hline
@@ -143,8 +152,13 @@ To try to understand this behavior, the cache miss rate has been analyzed using 
 The idea behind the blocked algorithm is to reduce the number of cache misses by exploiting the locality of the data. But in order to benefit from this, the block
 size must be chosen with care, furthermore the block size depends also on the size of the cache line. To decide the best size, the algorithm has been firstly
 tested with different block sizes. The results for the different platforms are shown in table \ref{tab:blocked_results}, where the highlighted rows indicate the 
-block size which fits the best for the given processor.
-\begin{table}
+block size which fits the best for the given processor. \\
+Subsequently the blocked algorithm has been compared against the na\"{i}ve algorithm and, as shown in figure \ref{fig:blocked_comparison} the results are pretty evident, indeed
+it outperforms the na\"{i}ve one on all the tested platforms. \\
+The cache miss rate has been analyzed using valgrind, this allowed to show the differences between the two algorithms (table \ref{tab:blocked_cache_miss}), highlighting
+the improvements of the blocked algorithm in exploiting the temporal locality of the data. \\
+
+\begin{table}[h]
     \centering
     \begin{tabular}{|c|c|}
         \hline
@@ -182,6 +196,29 @@ block size which fits the best for the given processor.
     \caption{Comparison of the blocked algorithm against the na\"{i}ve algorithm}
     \label{fig:blocked_comparison}
 \end{figure}
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|c|c|c|c|}
+        \hline
+        \multicolumn{4}{|c|}{\textbf{Ryzen 5 5600X}} \\ 
+        \hline
+        Algorithm & Dimension & I1 m.r. & D1 m.r. \\ \hline
+        Na\"{i}ve & 1024        & 0.00\%       & 4.0\%        \\ \hline
+        Blocked  & 1024        & 0.00\%       & 1.4\%        \\ \hline
+    \end{tabular}
+    \hspace{2em}
+    \begin{tabular}{|c|c|c|c|}
+        \hline
+        \multicolumn{4}{|c|}{\textbf{Xeon 4309y}} \\ 
+        \hline
+        Algorithm & Dimension & I1 m.r. & D1 m.r. \\ \hline
+        Na\"{i}ve & 1024        & 0.01\%       & 3.7\%        \\ \hline
+        Blocked  & 1024        & 0.00\%       & 1.0\%        \\ \hline
+    \end{tabular}
+    \caption{Comparison of the cache miss rate between the na\"{i}ve and the blocked algorithm, \texttt{-O3}}
+    \label{tab:blocked_cache_miss}
+\end{table}
+
 \section{Conclusion}
 \end{document}
 

@@ -25,18 +25,17 @@
 \maketitle
 
 \section{Problem Description}
-The goal of this homework is to implement a matrix transposition algorithm, where the transpose of a matrix
-is an operator which flips the matrix over its diagonal. That is, if $A$ is a matrix of size $m \times n$, then
-the transpose of $A$ is a matrix of size $n \times m$ where the element at row $i$ and column $j$ of $A$, is the element at 
+The goal of this homework is to implement a matrix transposition algorithm, where the transpose of a matrix $A$
+is an operator that flips $A$ over its diagonal. That is, if $A$ is of size $m \times n$, then
+its transpose is a matrix of size $n \times m$ where the element at row $i$ and column $j$ of $A$ is the element at 
 row $j$ and column $i$ of the transpose of $A$, also denoted as $A\textsuperscript{T}$. \\
 Additionally, we are asked to measure the effective bandwidth of our implementation, considering also the
 usage of different optimization flags such as: \texttt{-O0}, \texttt{-O1}, \texttt{-O2}, \texttt{-O3}. \\
-Furthermore an analysis of the cache behavior of the algorithm is required, for this purpose we are going to use
+Furthermore an analysis of the cache behavior of the algorithm is required, and for this purpose we are going to use
 valgrind.
 \subsection{Algorithms}
-In order to dimostrare qualcosa, two algorithms have been implemented: the first one is a na\"{i}ve approach, which
-consists in iterating over the matrix and swapping the elements, while the second one is a more optimized version
-which takes advantage of a block mechanism to reduce the number of cache misses.
+Two algorithms have been implemented: the first one is a na\"{i}ve approach, which
+consists in iterating over the $src$ matrix, reading the data at position $src[i][j]$ and writing it at position $dest [j][i]$. The second algorithm is a more optimized version, which takes advantage of a block mechanism to reduce the number of cache misses.
 \begin{algorithm}
     \caption{Na\"{i}ve Matrix Transposition}
     \begin{algorithmic}[1]
@@ -48,7 +47,6 @@ which takes advantage of a block mechanism to reduce the number of cache misses.
         \EndFor
     \end{algorithmic}
 \end{algorithm}
-
 \begin{algorithm}
     \caption{Matrix Transposition with Blocking}
     \begin{algorithmic}[1]
@@ -64,7 +62,6 @@ which takes advantage of a block mechanism to reduce the number of cache misses.
         \EndFor
     \end{algorithmic}
 \end{algorithm}
-
 \section{Experimental Setup}
 \subsection{Hardware}
 \begin{minipage}{\textwidth}
@@ -84,6 +81,7 @@ which takes advantage of a block mechanism to reduce the number of cache misses.
                 \end{itemize}
                 \item \textbf{RAM}: 16 GB DDR4
                 \item \textbf{OS}: Ubuntu 22.04 (on WSL2)
+                \item \textbf{Compiler}: G++ 11.4.0
             \end{itemize}
             \columnbreak
             \item \textbf{Marzola Cluster}
@@ -96,9 +94,10 @@ which takes advantage of a block mechanism to reduce the number of cache misses.
                     \item \textbf{L1 Cache}: 32 KB (per core)
                     \item \textbf{L2 Cache}: 1 MB (per core)
                     \item \textbf{L3 Cache}: 12 MB
-                    \item[\vspace{\fill}]
-                    \item[\vspace{\fill}]
                 \end{itemize}
+                \item \textbf{RAM}: 257 GB
+                \item \textbf{OS}: Rocky Linux 8.7
+                \item \textbf{Compiler}: G++ 8.5.0
             \end{itemize}
         \end{enumerate}
     \end{multicols}
@@ -106,36 +105,36 @@ which takes advantage of a block mechanism to reduce the number of cache misses.
 \subsection{Results}
 To provide a broader and precise analysis, the results have been collected executing both algorithms on matrices of different sizes,
 ranging from $4 \times 4$ to $4096 \times 4096$. Also, for each dimension, the algorithms have been executed multiple times (100) to further improve the measurements. \\
-The effective bandwidth has been calculated using the formula: \\
+The effective bandwidth has been calculated using the formula below: \\
 \begin{equation*}
-    Effective \: Bandwidth = \frac{\left ( 2 * dimension * dimension * 4 \right )}{execution\: time}
+    Effective \: Bandwidth = \frac{\left ( \textit{2} * dimension * dimension * \textit{4} \right )}{execution\: time}
     \left[\frac{GB}{s}\right]
 \end{equation*}
-where the factor $2$ is due to the fact that we are reading and writing the matrix, the $dimension$ is the size of the matrix, 
-$4$ is the size of a single element (float) and the $execution \: time$ is the average of the 100 executions. \\
+The factor \textit{2} is because we are reading and writing the matrix; the $dimension$ is the size of the matrix; 
+\textit{4} is the size of a single element (float) and the $execution \: time$ is the average time of the 100 executions. \\
 \subsubsection{Na\"{i}ve Algorithm}
 The obtained results are in line with the expectations, indeed the executions with \texttt{-O0} don't show any significant difference because the compiler 
 doesn't apply any optimization. Meanwhile, the executions with \texttt{-O1}, \texttt{-O2} and \texttt{-O3} show a significant improvement in the performance, on all
 the tested platforms. This is probably due to the fact that the compiler is able to apply some optimizations, such as loop unrolling. \\
-Another interesting aspect is that both the Ryzen 5 and the Xeon starts to show a decrease in the performance when the matrix size is greater than $64 \times 64$, 
+Another interesting aspect is that both the Ryzen 5 and the Xeon start to show a decrease in the performance when the matrix size is greater than $64 \times 64$, 
 as shown in figure \ref{fig:naive_comparison}. \\
-To try to understand this behavior, the cache miss rate has been analyzed using valgrind (table \ref{tab:naive_cache_miss}). \\ 
+To understand this behavior, the cache miss rate has been analyzed using valgrind (table \ref{tab:naive_cache_miss}). \\ 
 \begin{table}[h]
     \centering
     \begin{tabular}{|c|c|c|}
-    \hline
-    \multicolumn{3}{|c|}{\textbf{Ryzen 5 5600X}} \\
-    \hline
-    Dimension            & I1 miss rate & D1 miss rate \\ \hline
-    64                   & 0.01\%       & 0.4\%        \\ \hline
-    128                  & 0.00\%       & 4.0\%        \\ \hline 
+        \hline
+        \multicolumn{3}{|c|}{\textbf{Ryzen 5 5600X}} \\
+        \hline
+        \textbf{Dimension}            & \textbf{I1 miss rate} & \textbf{D1 miss rate} \\ \hline
+        64                   & 0.01\%       & 0.4\%        \\ \hline
+        128                  & 0.00\%       & 4.0\%        \\ \hline 
     \end{tabular}
     \hspace{2em}
     \begin{tabular}{|c|c|c|}
         \hline
         \multicolumn{3}{|c|}{\textbf{Xeon 4309y}} \\
         \hline
-        Dimension            & I1 miss rate & D1 miss rate \\ \hline
+        \textbf{Dimension}            & \textbf{I1 miss rate} & \textbf{D1 miss rate} \\ \hline
         64                   & 0.01\%       & 0.1\%        \\ \hline
         128                  & 0.00\%       & 3.6\%        \\ \hline 
     \end{tabular}
@@ -150,13 +149,12 @@ To try to understand this behavior, the cache miss rate has been analyzed using 
 \end{figure}
 \subsubsection{Blocked Algorithm}
 The idea behind the blocked algorithm is to reduce the number of cache misses by exploiting the locality of the data. But in order to benefit from this, the block
-size must be chosen with care, furthermore the block size depends also on the size of the cache line. To decide the best size, the algorithm has been firstly
-tested with different block sizes. The results for the different platforms are shown in table \ref{tab:blocked_results}, where the highlighted rows indicate the 
+size must be chosen with care, furthermore the block size depends also on the size of the cache line. To decide the best size the algorithm has been 
+tested with different block sizes. The results for the used platforms are shown in table \ref{tab:blocked_results}, where the highlighted rows indicate the 
 block size which fits the best for the given processor. \\
-Subsequently the blocked algorithm has been compared against the na\"{i}ve algorithm and, as shown in figure \ref{fig:blocked_comparison} the results are pretty evident, indeed
-it outperforms the na\"{i}ve one on all the tested platforms. \\
-The cache miss rate has been analyzed using valgrind, this allowed to show the differences between the two algorithms (table \ref{tab:blocked_cache_miss}), highlighting
-the improvements of the blocked algorithm in exploiting the temporal locality of the data. \\
+Subsequently, as shown in figure \ref{fig:blocked_comparison}, the results are pretty evident. Indeed, the blocked algorithm outperforms the na\"{i}ve one on both platforms. \\
+The cache miss rate has been analyzed using valgrind. This highlighted how the blocked algorithm is able to exploit the temporal locality of the data.
+The results of the analysis are shown in table \ref{tab:blocked_cache_miss}. \\
 
 \begin{table}[h]
     \centering
@@ -164,28 +162,28 @@ the improvements of the blocked algorithm in exploiting the temporal locality of
         \hline
         \multicolumn{2}{|c|}{\textbf{Ryzen 5 5600X}} \\
         \hline
-        Blocksize & Bandwidth \\ \hline
-        2         & 4.8506 GB/s \\ \hline
+        \textbf{Blocksize } & \textbf{Bandwidth (GB/s)} \\ \hline
+        2         & 4.85 \\ \hline
         \rowcolor{LightYellow}
-        4         & 7.49072 GB/s \\ \hline
-        8         & 3.47782 GB/s \\ \hline
-        16        & 3.62071 GB/s \\ \hline
-        32        & 3.33045 GB/s \\ \hline
-        64        & 2.7568 GB/s \\ \hline
+        4         & 7.49 \\ \hline
+        8         & 3.47 \\ \hline
+        16        & 3.62 \\ \hline
+        32        & 3.33 \\ \hline
+        64        & 2.75 \\ \hline
     \end{tabular}
     \hspace{2em}
     \begin{tabular}{|c|c|}
         \hline
         \multicolumn{2}{|c|}{\textbf{Xeon 4309y}} \\
         \hline
-        Blocksize & Bandwidth \\ \hline
-        2         & 2.04391 GB/s \\ \hline
-        4         & 3.83168 GB/s \\ \hline
+        \textbf{Blocksize } & \textbf{Bandwidth (GB/s)} \\ \hline
+        2         & 2.04 \\ \hline
+        4         & 3.83 \\ \hline
         \rowcolor{LightYellow}
-        8         & 4.80583 GB/s \\ \hline
-        16        & 2.45955 GB/s \\ \hline
-        32        & 2.59337 GB/s \\ \hline
-        64        & 2.72063 GB/s \\ \hline
+        8         & 4.80 \\ \hline
+        16        & 2.45 \\ \hline
+        32        & 2.59 \\ \hline
+        64        & 2.72 \\ \hline
     \end{tabular}
     \caption{Results of the blocked algorithm with different block sizes ($1024 \times 1024$, \texttt{-O3})}
     \label{tab:blocked_results}
@@ -202,7 +200,7 @@ the improvements of the blocked algorithm in exploiting the temporal locality of
         \hline
         \multicolumn{4}{|c|}{\textbf{Ryzen 5 5600X}} \\ 
         \hline
-        Algorithm & Dimension & I1 m.r. & D1 m.r. \\ \hline
+        \textbf{Algorithm} & \textbf{Dimension} & \textbf{I1 m.r.} & \textbf{D1 m.r}. \\ \hline
         Na\"{i}ve & 1024        & 0.00\%       & 4.0\%        \\ \hline
         Blocked  & 1024        & 0.00\%       & 1.4\%        \\ \hline
     \end{tabular}
@@ -211,14 +209,18 @@ the improvements of the blocked algorithm in exploiting the temporal locality of
         \hline
         \multicolumn{4}{|c|}{\textbf{Xeon 4309y}} \\ 
         \hline
-        Algorithm & Dimension & I1 m.r. & D1 m.r. \\ \hline
+        \textbf{Algorithm} & \textbf{Dimension} & \textbf{I1 m.r.} & \textbf{D1 m.r}. \\ \hline
         Na\"{i}ve & 1024        & 0.01\%       & 3.7\%        \\ \hline
         Blocked  & 1024        & 0.00\%       & 1.0\%        \\ \hline
     \end{tabular}
     \caption{Comparison of the cache miss rate between the na\"{i}ve and the blocked algorithm, \texttt{-O3}}
     \label{tab:blocked_cache_miss}
 \end{table}
-
 \section{Conclusion}
+To conclude, if provided with an adequate block size, the blocked algorithm is able to achieve an higher effective bandwidth than the na\"{i}ve one.
+These results are concordant with the outcomes of the cache analysis. \\
+A future direction to further improve the performance could be to parallelize the algorithms. A possible solution could ideally employ the usage of one thread 
+for each cell of the matrix. Of course, this approach would require a high number of threads, therefore being impractical for large matrices. Instead, a better solution 
+could be to divide the matrix into blocks and assign a thread to each of them.
 \end{document}
 

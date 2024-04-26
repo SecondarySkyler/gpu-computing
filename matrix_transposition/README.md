@@ -25,3 +25,4 @@ To use the blocked algorithm instead, use:
 ./transpose <i>n</i> --block=yes
 </pre>
 
+<b>Be aware:</b> since in the main function there are some print statements that will allow you to state the transpose functions work, keep in mind that with big matrices there could be some problems with the visualization.

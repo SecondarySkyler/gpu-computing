@@ -18,7 +18,7 @@
     \large Homework 1: Matrix Transposition \\
 }
 \author{Murtas Cristian \\ 248025 \\ cristian.murtas@studenti.unitn.it \\
-\href{https://github.com/SecondarySkyler/gpu-computing/tree/main/matrix_transposition}{GitHub Repository}
+\underline{\href{https://github.com/SecondarySkyler/gpu-computing/tree/main/matrix_transposition}{GitHub Repository}}
 } 
 
 \begin{document}
@@ -26,15 +26,15 @@
 
 \section{Problem Description}
 The goal of this homework is to implement a matrix transposition algorithm, where the transpose of a matrix $A$
-is an operator that flips $A$ over its diagonal. That is, if $A$ is of size $m \times n$, then
-its transpose is a matrix of size $n \times m$ where the element at row $i$ and column $j$ of $A$ is the element at 
-row $j$ and column $i$ of the transpose of $A$, also denoted as $A\textsuperscript{T}$. \\
-Additionally, we are asked to measure the effective bandwidth of our implementation, considering also the
-usage of different optimization flags such as: \texttt{-O0}, \texttt{-O1}, \texttt{-O2}, \texttt{-O3}. \\
-Furthermore an analysis of the cache behavior of the algorithm is required, and for this purpose we are going to use
+is an operation that flips $A$ over its diagonal. 
+If $A$ is of size $m \times n$ and $e$ is the element at row $i$ and column $j$, then the transpose of $A$ - also denoted as $A\textsuperscript{T}$ - 
+is a matrix of size $n \times m$, where $e$ is at row $j$ and column $i$.  \\
+Additionally, we are asked to measure the effective bandwidth of our implementation, also considering  the
+usage of different optimization flags, such as: \texttt{-O0}, \texttt{-O1}, \texttt{-O2}, \texttt{-O3}. \\
+Furthermore, an analysis of the cache behavior related to the algorithm is required and, for this purpose, we are going to use
 valgrind.
 \subsection{Algorithms}
-Two algorithms have been implemented: the first one is a na\"{i}ve approach, which
+Two algorithms have been implemented. The first one is a na\"{i}ve approach, which
 consists in iterating over the $src$ matrix, reading the data at position $src[i][j]$ and writing it at position $dest [j][i]$. The second algorithm is a more optimized version, which takes advantage of a block mechanism to reduce the number of cache misses.
 \begin{algorithm}
     \caption{Na\"{i}ve Matrix Transposition}
@@ -110,10 +110,10 @@ The effective bandwidth has been calculated using the formula below: \\
     Effective \: Bandwidth = \frac{\left ( \textit{2} * dimension * dimension * \textit{4} \right )}{execution\: time}
     \left[\frac{GB}{s}\right]
 \end{equation*}
-The factor \textit{2} is because we are reading and writing the matrix; the $dimension$ is the size of the matrix; 
-\textit{4} is the size of a single element (float) and the $execution \: time$ is the average time of the 100 executions. \\
+The factor \textit{2} is because we are both reading and writing the matrix; the $dimension$ is the size of the matrix; 
+\textit{4} is the size of a single floating element in bytes and the $execution \: time$ is the average time of the 100 executions. \\
 \subsubsection{Na\"{i}ve Algorithm}
-The obtained results are in line with the expectations, indeed the executions with \texttt{-O0} don't show any significant difference because the compiler 
+The obtained results are in line with the expectations. Indeed, the executions with \texttt{-O0} don't show any significant difference because the compiler 
 doesn't apply any optimization. Meanwhile, the executions with \texttt{-O1}, \texttt{-O2} and \texttt{-O3} show a significant improvement in the performance, on all
 the tested platforms. This is probably due to the fact that the compiler is able to apply some optimizations, such as loop unrolling. \\
 Another interesting aspect is that both the Ryzen 5 and the Xeon start to show a decrease in the performance when the matrix size is greater than $64 \times 64$, 
@@ -148,12 +148,13 @@ To understand this behavior, the cache miss rate has been analyzed using valgrin
     \label{fig:naive_comparison}
 \end{figure}
 \subsubsection{Blocked Algorithm}
-The idea behind the blocked algorithm is to reduce the number of cache misses by exploiting the locality of the data. But in order to benefit from this, the block
-size must be chosen with care, furthermore the block size depends also on the size of the cache line. To decide the best size the algorithm has been 
-tested with different block sizes. The results for the used platforms are shown in table \ref{tab:blocked_results}, where the highlighted rows indicate the 
-block size which fits the best for the given processor. \\
+The idea behind the blocked algorithm is to reduce the number of cache misses by exploiting the locality of the data. But in order to benefit from this the block
+size must be chosen with care, since it also depends on the size of the cache line. Different dimensions have been used to test the algorithm and find the best one.
+In this step, we used a matrix of $1024 \times 1024$ and set the optimization flag to \texttt{-O3}.
+The results for the used platforms are shown in table \ref{tab:blocked_results}, where the highlighted rows indicate the most appropriate 
+block size for the given processor. \\
 Subsequently, as shown in figure \ref{fig:blocked_comparison}, the results are pretty evident. Indeed, the blocked algorithm outperforms the na\"{i}ve one on both platforms. \\
-The cache miss rate has been analyzed using valgrind. This highlighted how the blocked algorithm is able to exploit the temporal locality of the data.
+The cache miss rate analysis highlights how the blocked algorithm is able to exploit the temporal locality of the data.
 The results of the analysis are shown in table \ref{tab:blocked_cache_miss}. \\
 
 \begin{table}[h]

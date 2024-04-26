@@ -3,28 +3,50 @@
 #include <chrono>
 #include <iomanip>
 #include <fstream>
+#include <algorithm>
 #include <map>
-#define O_FLAG "-O3"
+#include <optional>
 
-void transpose(int* src, int* dest, const int size, std::vector<long double>& times) {
+#define O_FLAG "-O0"
+#define dtype float
+// this is used to set the times vector as optional
+static std::vector<double> DEFAULT;
+
+/**
+ * This function is used to transpose the given matrix
+ * with the naive algorithm
+ * @param src: the source matrix
+ * @param dest: the destination matrix (transposed)
+ * @param dim: the dimension of the matrix, intended to be the length of the side
+ * @param times: the vector to store the execution times
+*/
+void transpose(dtype* src, dtype* dest, const int dim, std::vector<double>& times = DEFAULT) {
 
     std::chrono::high_resolution_clock::time_point end;
     // start time
     auto start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < size; i++) {
-        for (int j = 0; j < size; j++) {
-            dest[j * size + i] = src[i * size + j];
+    for (int i = 0; i < dim; i++) {
+        for (int j = 0; j < dim; j++) {
+            dest[j * dim + i] = src[i * dim + j];
         }
     }
     // end time
     end = std::chrono::high_resolution_clock::now();
     double executionTime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-    executionTime /= 1e9;
-    std::cout << "print time in transpose function: " << executionTime << " ns" << std::endl;
+    executionTime /= 1e9; // convert to seconds
     times.push_back(executionTime);
 }
 
-void transponse_block(int* src, int* dest, const int size, std::vector<long double>& times, const int blockSize) {
+/**
+ * This function is used to transpose the given matrix
+ * with the block algorithm
+ * @param src: the source matrix
+ * @param dest: the destination matrix (transposed)
+ * @param size: the dimension of the matrix, intended to be the length of the side
+ * @param blockSize: the size of the block
+ * @param times: the vector to store the execution times
+*/
+void transponse_block(dtype* src, dtype* dest, const int size, const int blockSize, std::vector<double>& times = DEFAULT) {
     std::chrono::high_resolution_clock::time_point end;
     // start time
     auto start = std::chrono::high_resolution_clock::now();
@@ -40,22 +62,34 @@ void transponse_block(int* src, int* dest, const int size, std::vector<long doub
     // end time
     end = std::chrono::high_resolution_clock::now();
     double executionTime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-    executionTime /= 1e9;
-    // std::cout << "print time in transpose function: " << executionTime << " ns" << std::endl;
+    executionTime /= 1e9; // convert to seconds
     times.push_back(executionTime);
 }
 
-int* create_matrix(const int size) {
-    int* matrix = new int[size * size];
+/**
+ * This function is used to create a matrix of size x size
+ * 
+ * @param size: the size of the matrix
+ * @return matrix: the matrix created, filled with random numbers of type dtype
+*/
+dtype* create_matrix(const int size) {
+    dtype* matrix = new dtype[size * size];
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < size; j++) {
-            matrix[i * size + j] = rand() % 100;
+            float rnd = static_cast <float> (rand()) / static_cast <float> (RAND_MAX / 100.0);
+            matrix[i * size + j] = rnd;
         }
     }
     return matrix;
 }
 
-void print_matrix(int* matrix, const int size) {
+/**
+ * This function prints the given matrix
+ * 
+ * @param matrix: the matrix to be printed
+ * @param size: the size of the matrix
+*/
+void print_matrix(dtype* matrix, const int size) {
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < size; j++) {
             std::cout << matrix[i * size + j] << " ";
@@ -64,82 +98,62 @@ void print_matrix(int* matrix, const int size) {
     }
 }
 
-void calculate_effective_bandwidth(const std::vector<long double>& times, const int dimension) {
-    const double total_data = (2 * dimension * dimension * sizeof(int)) / 10e9;
-    std::cout << "Total data: " << total_data << " GB" << std::endl;
-    std::vector<double> bandWidths;
 
-    for (auto time : times) {
-        std::cout << "Time: " << time << " ns" << std::endl;
-        double time_sec = time / 10e9;
-        double bandwidth = total_data / time_sec;
-        //bandwidth *= 1e9;
-        bandWidths.push_back(bandwidth);
-    }
-
-    // calculate effective bandwidth in GB/s
-    double meanBandwidth = std::accumulate(bandWidths.begin(), bandWidths.end(), 0.0) / bandWidths.size();
-    double peakBandwidth = *std::max_element(bandWidths.begin(), bandWidths.end());
-    std::cout << std::fixed << std::setprecision(11) << "Effective bandwidth (mean): " << meanBandwidth << " GB/s" << std::endl;
-    std::cout << std::fixed << std::setprecision(11) << "Peak effective bandwidth: " << peakBandwidth << " GB/s" << std::endl;
-}
-
-int main(int argc, char const *argv[]) {
-    int dimension = 1024;
-    const int repeat = 100;
-    const int blockSize = 32;
-    std::vector<long double> times;
-
-
-    for (int i = 0; i < repeat; i++) {
-        int* matrix = create_matrix(dimension);
-        int* transposed_matrix = new int[dimension * dimension];
-        transponse_block(matrix, transposed_matrix, dimension, times, blockSize);
-
-        delete [] matrix;
-        delete [] transposed_matrix;
-    }
-
-    // calculate_effective_bandwidth(times, dimension);
-    double mean_time = std::accumulate(times.begin(), times.end(), 0.0) / times.size();
-    double total_data = (2 * dimension * dimension * sizeof(int));
-
-    double bandwidth = total_data / mean_time;
-    bandwidth /= 1e9;
-    std::cout << "Bandwidth: " << bandwidth << " GB/s" << std::endl;
-    
-    // std::ofstream file("m1_block.csv", std::ios::app);
-    // file << O_FLAG << "," << dimension << "," << bandwidth << std::endl;
-
-
-    times.clear();
-    
-    return 0;
-
-}
-
-
+/**
+ * This main function is used to test the transpose_block function
+ * 
+*/
 // int main(int argc, char const *argv[]) {
-//     // take integer from argv[1]
-//     // int dimension = pow(2, std::stoi(argv[1]));
-//     // std::array exponents = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
-//     std::array exponents = {11};
+//     int dimension = 1024;
 //     const int repeat = 100;
-//     const int blockSize = 16;
-//     // const std::string O_FLAG = "-O3";
+//     const int blockSize = 8;
+//     // std::ofstream file("csv/cluster_block.csv", std::ios::app);
+//     // std::array blockSizes = {2, 4, 8, 16, 32, 64};
 //     std::vector<long double> times;
 
-//     for (const int exp : exponents) {
-//         std::cout << "Dimension: " << exp << std::endl;
-//         int dimension = pow(2, exp);
+//     // for (const int blockSize : blockSizes) {
+//         for (int i = 0; i < repeat; i++) {
+//             int* matrix = create_matrix(dimension);
+//             int* transposed_matrix = new int[dimension * dimension];
+//             transponse_block(matrix, transposed_matrix, dimension, times, blockSize);
+
+//             delete [] matrix;
+//             delete [] transposed_matrix;
+//         }
+
+//         // for (auto time : times) {
+//         //     file << O_FLAG << "," << dimension << "," << time << std::endl;   
+//         // }
+
+//         times.clear();
+//     // }     
+        
+//     return 0;
+// }
+
+/**
+ * This main function is used to test the naive transpose function
+ * 
+*/
+// int main(int argc, char const *argv[]) {
+//     // take integer from argv[1]
+//     int dimension = pow(2, std::stoi(argv[1]));
+//     std::ofstream file("csv/cluster_naive.csv", std::ios::app);
+//     // std::array exponents = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+//     // std::array exponents = {2};
+//     const int repeat = 100;
+//     std::vector<double> times;
+
+//     // for (const int exp : exponents) {
+//     //     int dimension = pow(2, exp);
+//         // std::cout << "Dimension: " << dimension << std::endl;
 
 //         for (int i = 0; i < repeat; i++) {
-//             std::cout << "Iteration: " << i << std::endl;
+//             // std::cout << "Iteration: " << i << std::endl;
 //             // create matrix
 //             int* matrix = create_matrix(dimension);
 //             int* transposed_matrix = new int[dimension * dimension];
-//             // transpose(matrix, transposed_matrix, dimension, times);
-//             transponse_block(matrix, transposed_matrix, dimension, times, blockSize);
+//             transpose(matrix, transposed_matrix, dimension, times);
             
 //             // print_matrix(matrix, dimension);
 //             // std::cout << "------------" << std::endl;
@@ -150,18 +164,59 @@ int main(int argc, char const *argv[]) {
 //             delete [] transposed_matrix;
 //         }
 
-//         // calculate effective bandwidth
-//         calculate_effective_bandwidth(times, dimension);
-        
-
 //         // Write to file
-//         // std::ofstream file("output.csv", std::ios::app);
-//         // file << O_FLAG << "," << dimension << "," << meanBandwidth << "," << peakBandwidth << std::endl;
-//         // bandWidths.clear();
+//         // for (auto time : times) {
+//         //     file << O_FLAG << "," << dimension << "," << time << std::endl;   
+//         // }
+
 //         times.clear();
-//     }
-    
-
-
+//     // }
 //     return 0;
 // }
+
+int main(int argc, char const *argv[]) {
+    bool isNaive = true;
+    srand(time(0));
+    if (argc >= 2 || argc <= 3) {
+        if (argv[2] != NULL) {
+            std::string isBlock = argv[2];
+            if (isBlock.find("yes") != std::string::npos) {
+                isNaive = false;
+            }
+        }
+        // take integer from argv[1]
+        int side = std::stoi(argv[1]);
+        int dimension = 1 << side;
+
+        if (isNaive) {
+            std::cout << "Naive Transpose" << std::endl;
+            dtype* matrix = create_matrix(dimension);
+            dtype* transposed_matrix = new dtype[dimension * dimension];
+            transpose(matrix, transposed_matrix, dimension);
+            print_matrix(matrix, dimension);
+            std::cout << "------------" << std::endl;
+            print_matrix(transposed_matrix, dimension);
+            std::cout << "------------" << std::endl;
+            
+            delete [] matrix;
+            delete [] transposed_matrix;
+        } else {
+            std::cout << "Block Transpose" << std::endl;
+            const int blockSize = 4;
+            dtype* matrix = create_matrix(dimension);
+            dtype* transposed_matrix = new dtype[dimension * dimension];
+            transponse_block(matrix, transposed_matrix, dimension, blockSize);
+            print_matrix(matrix, dimension);
+            std::cout << "------------" << std::endl;
+            print_matrix(transposed_matrix, dimension);
+            std::cout << "------------" << std::endl;
+
+            delete [] matrix;
+            delete [] transposed_matrix;
+        }
+    } else {
+        std::cout << "Invalid number of arguments" << std::endl;
+    }
+    return 0;
+}
+

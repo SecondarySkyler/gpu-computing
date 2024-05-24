@@ -1,0 +1,57 @@
+\documentclass[]{IEEEconf}
+
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+
+\title{\textbf{GPU Computing} \\
+    \large Homework 2: Matrix Transposition with CUDA\\
+}
+\author{Murtas Cristian \\ 248025 \\ cristian.murtas@studenti.unitn.it \\
+\underline{\href{https://github.com/SecondarySkyler/gpu-computing/tree/main/matrix_transposition}{GitHub Repository}}
+}
+
+\begin{document}
+\maketitle
+\nocite{*}
+
+\begin{abstract}
+    
+\end{abstract}
+\section{Problem Description}
+
+\subsection{CUDA Algorithms}
+\begin{algorithm}
+    \caption{Naive Matrix Transposition}
+    \begin{algorithmic}[1]
+        \Procedure{NaiveTranspose}{$SRC, DST$}
+            \For{$i = 0$ to $N$}
+                \For{$j = 0$ to $N$}
+                    \State $B[i][j] = A[j][i]$
+                \EndFor
+            \EndFor
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+\begin{algorithm}
+    \caption{Matrix Transpose with Shared Memory}
+    \begin{algorithmic}[1]
+        \Procedure{TransposeSharedMem}{$SRC, DST$}
+            \For{$i = 0$ to $N$}
+                \For{$j = 0$ to $N$}
+                    \State $B[i][j] = A[j][i]$
+                \EndFor
+            \EndFor
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+
+\section{Experimental Setup}
+
+\section{Conclusions}
+
+\bibliographystyle{plain}
+\bibliography{references}
+\end{document}

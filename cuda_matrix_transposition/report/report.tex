@@ -18,23 +18,38 @@
 \nocite{*}
 
 \begin{abstract}
-    
+This report shows the results obtained by the implementation of different algorithms for matrix transposition
+on a GPU using CUDA. The first algorithm is a naive implementation that uses global memory to store the matrix
+and performs the transposition. The second algorithm uses shared memory to reduce the number of global memory accesses.
+Lastly, the third algorithm uses shared memory and avoid bank conflicts. These algorithms have been tested using different
+kernel configurations to find the best parameters. DIRE QUALCOSA SUI RISULTATI.
 \end{abstract}
 \section{Problem Description}
-
-\subsection{CUDA Algorithms}
+The goal of this homework is to implement different algorithms to transpose non-symmetric matrices of size $N \times N$.
+The transpose of a matrix is an operation that flips the matrix over its diagonal \cite{wiki:transposition}.
+The program should use an input parameter to set the size of the matrix, for instance, \textbf{transpose 12} will work on a 
+$2^{12} \times 2^{12}$ matrix. 
+We are also asked to find the best kernel configuration in terms of grid and block size, and to compare the performance 
+of the different algorithms, evaluating the effective bandwidth.
+\section{CUDA Algorithms}
+\subsection{Naive Transposition}
+In the \textit{NaiveTranspose} algorithm, we simply read the element at position $(row, col)$ from the source matrix and write it to the destination matrix at position $(col, row)$.
+Note that while the accesses to the $SRC$ matrix are coalesced, the accesses to the $DST$ matrix are not, indeed the writes to $DST$ have a stride equal
+to the width of the matrix.
 \begin{algorithm}
     \caption{Naive Matrix Transposition}
     \begin{algorithmic}[1]
         \Procedure{NaiveTranspose}{$SRC, DST$}
-            \For{$i = 0$ to $N$}
-                \For{$j = 0$ to $N$}
-                    \State $B[i][j] = A[j][i]$
-                \EndFor
+            \State $row \gets blockIdx.x \times TILE\_DIM + threadIdx.x$
+            \State $col \gets blockIdx.y \times TILE\_DIM + threadIdx.y$
+            \State $width \gets gridDim.x \times TILE\_DIM$
+            \For{$i = 0$ to $TILE\_DIM$ step $BLOCK\_ROWS$}
+                \State $DST[row \times width + (col + i)] = SRC[(col + i) \times width + row]$
             \EndFor
         \EndProcedure
     \end{algorithmic}
 \end{algorithm}
+\subsection{Shared Memory Transposition}
 \begin{algorithm}
     \caption{Matrix Transpose with Shared Memory}
     \begin{algorithmic}[1]
@@ -49,7 +64,10 @@
 \end{algorithm}
 
 \section{Experimental Setup}
-
+The entire experiment has been conducted on the Marzola cluster of the University of Trento, 
+which is equipped with NVIDIA A30 GPUs \cite{nvidia:a30}.
+Furthermore, the code has also been tested on a local machine equipped with an NVIDIA RTX 3070 \cite{nvidia:rtx3070}.
+For both setup, the information about the GPUs have been retrieved using the \textit{cudaGetDeviceProperties} function \cite{nvidia:cudaDeviceProp}.
 \section{Conclusions}
 
 \bibliographystyle{plain}

@@ -68,6 +68,19 @@ The entire experiment has been conducted on the Marzola cluster of the Universit
 which is equipped with NVIDIA A30 GPUs \cite{nvidia:a30}.
 Furthermore, the code has also been tested on a local machine equipped with an NVIDIA RTX 3070 \cite{nvidia:rtx3070}.
 For both setup, the information about the GPUs have been retrieved using the \textit{cudaGetDeviceProperties} function \cite{nvidia:cudaDeviceProp}.
+\section{Results}
+\begin{table}
+    \centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        \multicolumn{3}{|c|}{\textbf{Effective Bandwidth (GB/s)}} \\
+        \hline
+        Algorithm & RTX 3070 & A30 \\ \hline
+        Naive & 159.49 & 72.95 \\ \hline
+        Coalesced & 386.32 & 290.19 \\ \hline
+        Coalesced no bank conflicts & 372.41 & 696.60 \\ \hline
+    \end{tabular}  
+\end{table}
 \section{Conclusions}
 
 \bibliographystyle{plain}

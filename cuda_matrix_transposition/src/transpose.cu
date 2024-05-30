@@ -4,7 +4,7 @@
 #define dtype int
 
 const int TILE_DIM = 32;
-const int BLOCK_ROWS = 8;
+const int BLOCK_ROWS = 16;
 const int REPETITIONS = 100;
 
 __global__ void naive_transpose(dtype* matrix, dtype* transposed_matrix) {
@@ -126,7 +126,7 @@ int main(int argc, char const *argv[]) {
 
     typedef void (*transposing_functions) (dtype*, dtype*);
     transposing_functions fncts[] = {naive_transpose, transposeCoalesced, transposeCoalescedNoBankConflicts};
-    char *transposing_function_names[] = {"Naive transpose", "Coalesced transpose", "Coalesced transpose w/o bank conflicts"};
+    const char *transposing_function_names[] = {"Naive transpose", "Coalesced transpose", "Coalesced transpose w/o bank conflicts"};
     uint16_t tf_length = sizeof(fncts) / sizeof(fncts[0]);
     // iterate over the transposing functions
     for (int f = 0; f < tf_length; f++) {

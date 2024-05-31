@@ -90,6 +90,12 @@ int main(int argc, char const *argv[])
     dim3 block(TILE_DIM, TILE_DIM, 1);
     dim3 grid(N / block.x, N / block.y, 1);
 
+    dim3 grid_v2(
+        (N + TILE_DIM - 1) / TILE_DIM,
+        (N + TILE_DIM - 1) / TILE_DIM,
+        1
+    );
+
 
     int mem_size = N * N * sizeof(dtype);
 

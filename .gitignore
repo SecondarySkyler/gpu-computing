@@ -4,4 +4,5 @@ report.*
 !report.tex
 !report.pdf
 !/report
-cuda_matrix_transposition
+assignment_2/*.py
+assignment_2/csv

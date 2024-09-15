@@ -4,3 +4,4 @@ report.*
 !report.tex
 !report.pdf
 !/report
+cuda_matrix_transposition

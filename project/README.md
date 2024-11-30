@@ -16,11 +16,11 @@ As usual, <u>the metric to consider is the effective bandwidth.</u>
 ## Installation and Usage
 First clone the repository
 ```
-git clone https://github.com/SecondarySkyler/gpu-computing-project.git
+git clone https://github.com/SecondarySkyler/gpu-computing.git
 ```
 Change directory
 ```
-cd gpu-computing-project/
+cd gpu-computing/project
 ```
 Compile the executable
 ```
